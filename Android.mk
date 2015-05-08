@@ -19,13 +19,13 @@
 # to only building on ARM if they include assembly. Individual makefiles
 # are responsible for having their own logic, for fine-grained control.
 
-ifeq ($(BOARD_VENDOR),motorola-msm8960)
-ifeq ($(TARGET_BOARD_PLATFORM),msm8960)
+ifeq ($(BOARD_VENDOR),motorola-qcom)
+ifneq ($(filter mb886 moto_msm8960 moto_msm8960_jbbl xt897 xt897c xt907 xt925 xt926 xt925_jbbl,$(TARGET_DEVICE)),)
 
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := hostapd_default.conf
+LOCAL_MODULE := hostapd.accept
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES := config/$(LOCAL_MODULE)
@@ -33,11 +33,19 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/hostapd
 include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := wpa_supplicant_overlay.conf
+LOCAL_MODULE := hostapd.deny
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES := config/$(LOCAL_MODULE)
-LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/wifi
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/hostapd
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := hostapd_default.conf
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES := config/$(LOCAL_MODULE)
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/hostapd
 include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
@@ -49,6 +57,5 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/wifi
 include $(BUILD_PREBUILT)
 
 include $(call all-makefiles-under,$(LOCAL_PATH))
-include $(call all-subdir-makefiles,$(LOCAL_PATH))
 endif
 endif

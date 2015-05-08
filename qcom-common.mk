@@ -13,6 +13,9 @@
 # limitations under the License.
 
 LOCAL_PATH := device/motorola/qcom-common
+
+PRODUCT_BOOT_JARS += qcmediaplayer
+
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml \
@@ -25,7 +28,6 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.sensor.light.xml:system/etc/permissions/android.hardware.sensor.light.xml \
     frameworks/native/data/etc/android.hardware.sensor.gyroscope.xml:system/etc/permissions/android.hardware.sensor.gyroscope.xml \
     frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
-    frameworks/native/data/etc/android.hardware.sensor.barometer.xml:system/etc/permissions/android.hardware.sensor.barometer.xml \
     frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
     frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
     frameworks/native/data/etc/android.software.sip.voip.xml:system/etc/permissions/android.software.sip.voip.xml \
@@ -33,8 +35,14 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.sensor.compass.xml:system/etc/permissions/android.hardware.sensor.compass.xml \
     frameworks/native/data/etc/android.hardware.telephony.gsm.xml:system/etc/permissions/android.hardware.telephony.gsm.xml \
     frameworks/native/data/etc/android.hardware.telephony.cdma.xml:system/etc/permissions/android.hardware.telephony.cdma.xml \
-    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:system/etc/permissions/android.hardware.audio.low_latency.xml
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:system/etc/permissions/android.hardware.audio.low_latency.xml \
+    frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml
 
+# Media
+PRODUCT_COPY_FILES += \
+    frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+    frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
+    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml
 
 ## overlays
 DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
@@ -44,10 +52,7 @@ TARGET_SPECIFIC_HEADER_PATH := $(LOCAL_PATH)/include
 PRODUCT_PACKAGES += \
     audio.a2dp.default \
     audio.usb.default \
-    audio_policy.msm8960 \
-    audio.primary.msm8960 \
     audio.r_submix.default \
-    alsa.msm8960 \
     libalsa-intf \
     libaudio-resampler \
     libaudioutils \
@@ -56,31 +61,16 @@ PRODUCT_PACKAGES += \
     arec \
     alsaucm_test
 
-# Motorola
-PRODUCT_PACKAGES += \
-    aplogd \
-    modemlog
-
 # Misc
 PRODUCT_PACKAGES += \
+    curl \
+    libbson \
+    libcurl \
     tcpdump \
     Torch
 
-# Lights
-PRODUCT_PACKAGES += lights.msm8960
-
 # Charger
-PRODUCT_PACKAGES += charger charger_res_images
-
-# QRNGD
-PRODUCT_PACKAGES += qrngd
-
-# HAL
-PRODUCT_PACKAGES += \
-    copybit.msm8960 \
-    gralloc.msm8960 \
-    hwcomposer.msm8960 \
-    power.msm8960
+PRODUCT_PACKAGES += charger_res_images
 
 # Misc
 PRODUCT_PACKAGES += \
@@ -95,8 +85,7 @@ PRODUCT_PACKAGES += \
 
 # Qcom SoftAP
 PRODUCT_PACKAGES += \
-    libQWiFiSoftApCfg \
-    libqsap_sdk
+    libQWiFiSoftApCfg
 
 # Live Wallpapers
 PRODUCT_PACKAGES += \
@@ -120,29 +109,18 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     init.crda.sh \
     init.qcom.bt.sh \
-    init.qcom.class_core.sh \
-    init.qcom.class_main.sh \
     init.qcom.coex.sh \
-    init.qcom.early_boot.sh \
-    init.qcom.efs.sync.sh \
-    init.qcom.fm.sh \
-    init.qcom.mdm_links.sh \
-    init.qcom.modem_links.sh \
-    init.qcom.ril.sh \
-    init.qcom.syspart_fixup.sh \
-    init.qcom.thermal_conf.sh \
     init.qcom.usb.sh
 
 # Thermal profiles
 PRODUCT_PACKAGES += \
     thermald-8960.conf \
-    thermald-ghost.conf
+    thermald-ghost.conf \
+    thermal-engine-8226.conf
 
 # Scripts
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/scripts/mount_pds.sh:system/bin/mount_pds.sh \
-    $(LOCAL_PATH)/scripts/qcamerasrvwrapper.sh:system/bin/qcamerasrvwrapper.sh \
-    $(LOCAL_PATH)/scripts/sensorsqcomwrapper.sh:system/bin/sensorsqcomwrapper.sh \
+    $(LOCAL_PATH)/scripts/mount_pds.sh:system/bin/mount_pds.sh
 
 # We have enough storage space to hold precise GC data
 PRODUCT_TAGS += dalvik.gc.type-precise
@@ -151,7 +129,6 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 PRODUCT_PROPERTY_OVERRIDES += \
     debug.egl.hw=1 \
     debug.sf.hw=1 \
-    persist.sys.ui.hw=true \
     debug.composition.type=dyn \
     persist.hwc.mdpcomp.enable=true \
     debug.mdpcomp.logs=0 \
@@ -177,7 +154,8 @@ PRODUCT_PACKAGES += \
     libOmxAmrEnc \
     libOmxEvrcEnc \
     libOmxQcelp13Enc \
-    libdashplayer
+    libdashplayer \
+    qcmediaplayer
 
 # Filesystem management tools
 PRODUCT_PACKAGES += \
@@ -186,21 +164,27 @@ PRODUCT_PACKAGES += \
     resize2fs \
     setup_fs
 
-#wifi
+# WiFi
 PRODUCT_PACKAGES += \
+    dhcpcd.conf \
+    hostapd.accept \
+    hostapd.deny \
     hostapd_default.conf \
-    libnetcmdiface
+    libwpa_client \
+    hostapd \
+    wpa_supplicant \
+    wpa_supplicant.conf
 
 # Symlinks
 PRODUCT_PACKAGES += \
     libxml2 \
-    mbhc.bin \
-    wcd9310_anc.bin \
     WCNSS_qcom_wlan_nv.bin
 
 # QC Perf
+ifneq ($(TARGET_BOARD_PLATFORM),msm8226)
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.vendor.extension_library=/system/lib/libqc-opt.so
+endif
 
 # QCOM
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -211,7 +195,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.audio.fluence.mode=endfire \
     persist.audio.vr.enable=false \
     persist.audio.handset.mic=digital \
-    ro.qc.sdk.audio.fluencetype=fluence \
     ro.qc.sdk.audio.ssr=false
 
 # Bluetooth
@@ -224,11 +207,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Media
 PRODUCT_PROPERTY_OVERRIDES += \
-    lpa.decode=false \
-    tunnel.decode=true \
-    tunnel.audiovideo.decode=true \
+    lpa.decode=true \
     qcom.hw.aac.encoder=true \
-    af.resampler.quality=255 \
     persist.audio.lowlatency.rec=false
 
 # WiFi
@@ -238,8 +218,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.qc.sub.rdump.max=20
 
 # Radio and Telephony
+ifneq ($(TARGET_BOARD_PLATFORM),msm8226)
 PRODUCT_PROPERTY_OVERRIDES += \
-    rild.libpath=/system/lib/libril-qc-qmi-1.so \
+    rild.libpath=/system/lib/libril-qc-qmi-1.so
+endif
+PRODUCT_PROPERTY_OVERRIDES += \
     ril.subscription.types=NV,RUIM \
     keyguard.no_require_sim=true \
     ro.use_data_netmgrd=true \
@@ -249,8 +232,14 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.config.vc_call_vol_steps=7 \
     ro.modem.no_wdog_chk=1
 
+PRODUCT_GMS_CLIENTID_BASE ?= android-motorola
+
 # QC time services
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.timed.enable=true
+
+# USB OTG storage
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.isUsbOtgEnabled=true
 
 PRODUCT_BUILD_PROP_OVERRIDES += BUILD_UTC_DATE=0
