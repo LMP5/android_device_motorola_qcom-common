@@ -1,149 +1,80 @@
 #!/bin/bash
 
+# Check to see if the user passed a folder in to extract from rather than adb pull
 if [ $# -eq 1 ]; then
     COPY_FROM=$1
     test ! -d "$COPY_FROM" && echo error reading dir "$COPY_FROM" && exit 1
 fi
 
-test -z "$DEVICE" && echo device not set && exit 2
-test -z "$VENDOR" && echo vendor not set && exit 2
-test -z "$FAMILY" && echo vendor not set && exit 2
-test -z "$VENDORDEVICEDIR" && VENDORDEVICEDIR=$DEVICE
-export VENDORDEVICEDIR
+set -e
 
-BASE=../../../vendor/$VENDOR/$VENDORDEVICEDIR/proprietary
-rm -rf $BASE/*
-rm -rf $BASE/../packages 2> /dev/null
+function extract() {
+    for FILE in `egrep -v '(^#|^$)' $1`; do
+        echo "Extracting /system/$FILE ..."
+        OLDIFS=$IFS IFS=":" PARSING_ARRAY=($FILE) IFS=$OLDIFS
+        FILE=`echo ${PARSING_ARRAY[0]} | sed -e "s/^-//g"`
+        DEST=${PARSING_ARRAY[1]}
+        if [ -z $DEST ]; then
+            DEST=$FILE
+        fi
+        DIR=`dirname $FILE`
+        if [ ! -d $2/$DIR ]; then
+            mkdir -p $2/$DIR
+        fi
+        if [ "$COPY_FROM" = "" ]; then
+            # Try CM target first
+            if [ -f /system/$DEST ]; then
+                adb pull /system/$DEST $2/$DEST
+            else
+                # if file does not exist try OEM target
+                if [ "$?" != "0" ]; then
+                    adb pull /system/$FILE $2/$DEST
+                fi
+            fi
+        else
+            # Try CM target first
+            if [ -f $COPY_FROM/$DEST ]; then
+                cp $COPY_FROM/$DEST $2/$DEST
+            else
+                # if file does not exist try OEM target
+                if [ "$?" != "0" ]; then
+                    cp $COPY_FROM/$FILE $2/$DEST
+                fi
+            fi
+        fi
+    done
+}
 
-for FILE in `egrep -v '(^#|^$)' ../$DEVICE/device-proprietary-files.txt`; do
-    echo "Extracting /system/$FILE ..."
-    OLDIFS=$IFS IFS=":" PARSING_ARRAY=($FILE) IFS=$OLDIFS
-    FILE=${PARSING_ARRAY[0]}
-    DEST=${PARSING_ARRAY[1]}
-    if [ -z $DEST ]
-    then
-        DEST=$FILE
-    fi
-    DIR=`dirname $FILE`
-    if [ ! -d $BASE/$DIR ]; then
-        mkdir -p $BASE/$DIR
-    fi
-    if [ "$COPY_FROM" = "" ]; then
-        adb pull /system/$FILE $BASE/$DEST
-        # if file dot not exist try destination
-        if [ "$?" != "0" ]
-          then
-          adb pull /system/$DEST $BASE/$DEST
-        fi
-    else
-        cp $COPY_FROM/$FILE $BASE/$DEST
-        # if file does not exist try destination
-        if [ "$?" != "0" ]
-            then
-            cp $COPY_FROM/$DEST $BASE/$DEST
-        fi
-    fi
-done
+DEVICE_BASE=../../../vendor/$VENDOR/$DEVICE/proprietary
+rm -rf $DEVICE_BASE/*
 
-for FILE in `egrep -v '(^#|^$)' ../qcom-common/proprietary-files.txt`; do
-    echo "Extracting /system/$FILE ..."
-    OLDIFS=$IFS IFS=":" PARSING_ARRAY=($FILE) IFS=$OLDIFS
-    FILE=${PARSING_ARRAY[0]}
-    DEST=${PARSING_ARRAY[1]}
-    if [ -z $DEST ]
-    then
-        DEST=$FILE
-    fi
-    DIR=`dirname $FILE`
-    if [ ! -d $BASE/$DIR ]; then
-        mkdir -p $BASE/$DIR
-    fi
-    if [ "$COPY_FROM" = "" ]; then
-        adb pull /system/$FILE $BASE/$DEST
-        # if file dot not exist try destination
-        if [ "$?" != "0" ]
-          then
-          adb pull /system/$DEST $BASE/$DEST
-        fi
-    else
-        cp $COPY_FROM/$FILE $BASE/$DEST
-        # if file does not exist try destination
-        if [ "$?" != "0" ]
-            then
-            cp $COPY_FROM/$DEST $BASE/$DEST
-        fi
-    fi
-done
+# Extract the device specific files
+extract ../../$VENDOR/$DEVICE/device-proprietary-files.txt $DEVICE_BASE
 
-    if [ -d $BASE/app ]; then
-        mkdir -p ${BASE}/../packages
-        mv $BASE/app/* ${BASE}/../packages/
-    fi
-rmdir ${BASE}/app 2> /dev/null
+# Check if their is a family device tree for this device
+if [ ! -z $FAMILY_DEVICE ]; then
+    FAMILY_BASE=../../../vendor/$VENDOR/$FAMILY_DEVICE/proprietary
+    rm -rf $FAMILY_BASE/*
 
-BASE=../../../vendor/$VENDOR/$FAMILY/proprietary
-rm -rf $BASE/*
-for FILE in `egrep -v '(^#|^$)' ../$FAMILY/common-proprietary-files.txt`; do
-    echo "Extracting /system/$FILE ..."
-    OLDIFS=$IFS IFS=":" PARSING_ARRAY=($FILE) IFS=$OLDIFS
-    FILE=${PARSING_ARRAY[0]}
-    DEST=${PARSING_ARRAY[1]}
-    if [ -z $DEST ]
-    then
-        DEST=$FILE
+    # Check if there are files common to all devices but family specific
+    if [ -f ../../$VENDOR/$FAMILY_DEVICE/proprietary-files.txt ]; then
+        extract ../../$VENDOR/$FAMILY_DEVICE/proprietary-files.txt $DEVICE_BASE
     fi
-    DIR=`dirname $FILE`
-    if [ ! -d $BASE/$DIR ]; then
-        mkdir -p $BASE/$DIR
-    fi
-    if [ "$COPY_FROM" = "" ]; then
-        adb pull /system/$FILE $BASE/$DEST
-        # if file dot not exist try destination
-        if [ "$?" != "0" ]
-          then
-          adb pull /system/$DEST $BASE/$DEST
-        fi
-    else
-        cp $COPY_FROM/$FILE $BASE/$DEST
-        # if file does not exist try destination
-        if [ "$?" != "0" ]
-            then
-            cp $COPY_FROM/$DEST $BASE/$DEST
-        fi
-    fi
-done
+    # Extract the files common to all devices using this common device tree
+    extract ../../$VENDOR/$FAMILY_DEVICE/common-proprietary-files.txt $FAMILY_BASE
+fi
 
-BASE=../../../vendor/$VENDOR/qcom-common/proprietary
-rm -rf $BASE/*
-for FILE in `egrep -v '(^#|^$)' ../qcom-common/common-proprietary-files.txt`; do
-    echo "Extracting /system/$FILE ..."
-    OLDIFS=$IFS IFS=":" PARSING_ARRAY=($FILE) IFS=$OLDIFS
-    FILE=${PARSING_ARRAY[0]}
-    DEST=${PARSING_ARRAY[1]}
-    if [ -z $DEST ]
-    then
-        DEST=$FILE
-    fi
-    DIR=`dirname $FILE`
-    if [ ! -d $BASE/$DIR ]; then
-        mkdir -p $BASE/$DIR
-    fi
-    if [ "$COPY_FROM" = "" ]; then
-        adb pull /system/$FILE $BASE/$DEST
-        # if file dot not exist try destination
-        if [ "$?" != "0" ]
-          then
-          adb pull /system/$DEST $BASE/$DEST
-        fi
-    else
-        cp $COPY_FROM/$FILE $BASE/$DEST
-        # if file does not exist try destination
-        if [ "$?" != "0" ]
-            then
-            cp $COPY_FROM/$DEST $BASE/$DEST
-        fi
-    fi
-done
+# Check if their is a common device tree for this device
+if [ ! -z $COMMON_DEVICE ]; then
+    COMMON_BASE=../../../vendor/$VENDOR/$COMMON_DEVICE/proprietary
+    rm -rf $COMMON_BASE/*
 
-echo "This is designed to extract files from an official cm-10.2 build"
-../qcom-common/setup-makefiles.sh
+    # Check if there are files common to all devices but device specific
+    if [ -f ../../$VENDOR/$COMMON_DEVICE/proprietary-files.txt ]; then
+        extract ../../$VENDOR/$COMMON_DEVICE/proprietary-files.txt $DEVICE_BASE
+    fi
+    # Extract the files common to all devices using this common device tree
+    extract ../../$VENDOR/$COMMON_DEVICE/common-proprietary-files.txt $COMMON_BASE
+fi
+
+../$COMMON_DEVICE/setup-makefiles.sh

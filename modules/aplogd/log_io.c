@@ -16,10 +16,10 @@
  * Includes
  ************************/
 /* "Standard" Includes */
-#include <cutils/logger.h>
-#include <cutils/logd.h>
-#include <cutils/logprint.h>
-#include <cutils/event_tag_map.h>
+#include <log/logger.h>
+#include <log/logd.h>
+#include <log/logprint.h>
+#include <log/event_tag_map.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +40,8 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/statfs.h>
+#include <sys/cdefs.h>
+#include <sys/ioctl.h>
 #include <cutils/sockets.h>
 #include <cutils/properties.h>
 /* Aplogd local includes */
@@ -71,6 +73,8 @@
 #define LOG_SYSTEM_PATH "/dev/log/system"
 #define LOG_KERNEL_PATH "/proc/kmsg"
 #endif /* APLOGD_TEST */
+#define __LOGGERIO     0xAE
+#define LOGGER_GET_LOG_LEN         _IO(__LOGGERIO, 2) /* used log len */
 /************************
  * Local Globals
  ************************/
